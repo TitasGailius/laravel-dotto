@@ -1,0 +1,34 @@
+{
+    "name": "titasgailius/laravel-dotto",
+    "description": "Laravel Dotto is a very simple yet highly optimized docker setup for your Laravel application.",
+    "keywords": ["laravel", "ui", "docker", "docker-compose"],
+    "license": "MIT",
+    "version": "1.0.0",
+    "authors": [
+        {
+            "name": "Titas Gailius",
+            "email": "titas.gailius@gmail.com"
+        }
+    ],
+    "require": {
+        "illuminate/console": "^7.6",
+        "titasgailius/terminal": "^0.2.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "TitasGailius\\Dotto\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TitasGailius\\Dotto\\DottoServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
