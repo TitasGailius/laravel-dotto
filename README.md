@@ -1,3 +1,5 @@
+#### Work In Progress
+
 # Laravel Dotto
 
 Laravel Dotto is a very simple yet highly optimized docker setup for your Laravel application.
@@ -6,7 +8,29 @@ Laravel Dotto is a very simple yet highly optimized docker setup for your Larave
     <img width="450" src="./images/dotto.png" alt="Dotto">
 </p>
 
-# Stack
+# Usage
+
+Everything is automated...
+
+```bash
+php artisan dotto:up
+```
+
+... and Dotto will launch your application.
+
+# How It Works?
+
+Dotto automatically discovers what services your application requires and nicely bundles docker-compose services for you.
+
+# Logs
+
+If you would like to tail your application logs, simply run:
+
+```bash
+php artisan dotto:logs
+```
+
+<!-- # Stack
 
 - Nginx
 - PHP 7.3
@@ -137,5 +161,5 @@ DB_PASSWORD=secret
 # Start the containers back up
 docker-compose up
 ```
-
+ -->
 
