@@ -20,6 +20,8 @@ RUN composer install \
 COPY . .
 RUN composer dump-autoload
 
+@includeWhen($config['build_frontend'], 'dockerfile-frontend.blade.php')
+@if ()
 #
 # Build Frontend Assets
 #
@@ -35,6 +37,7 @@ COPY resources/js ./resources/js
 COPY resources/sass ./resources/sass
 
 RUN npm run production
+@endif
 
 #
 # Build PHP-FPM

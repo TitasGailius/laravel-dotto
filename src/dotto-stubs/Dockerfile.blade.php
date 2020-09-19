@@ -5,12 +5,7 @@ FROM composer:1.7 as vendor
 
 WORKDIR /app
 
-{{--
-# It is not ideal that the "database" directory is copied over
-# but it is required for the composer to work properly.
 COPY database/ database/
- --}}
-
 COPY composer.json composer.json
 COPY composer.lock composer.lock
 
@@ -25,22 +20,7 @@ RUN composer install \
 COPY . .
 RUN composer dump-autoload
 
-#
-# Build Frontend Assets
-#
-FROM node:8.11 as frontend
-
-WORKDIR /app
-
-COPY artisan package.json {{ $config->lockFile() }} webpack.mix.js ./
-
-RUN {{ $config->nodeManager() }} install
-
-@foreach ($config->assets() as $asset)
-COPY {{ $asset }} ./{{ $asset }}
-@endforeach
-
-RUN {{ $config->nodeManager() }} run production
+@includeWhen($config['build_frontend'], 'dockerfile-frontend.blade.php')
 
 #
 # Build PHP-FPM
@@ -58,15 +38,20 @@ RUN pecl install redis \
     && docker-php-ext-enable redis \
     &&  rm -rf /tmp/pear
 
-# Copy frontend build
-COPY --chown=www-data:www-data --from=frontend /app/public/ ./public/
+# Copy Frontend build
+COPY --chown=www-data:www-data --from=frontend /app/public/js/ ./public/js/
+COPY --chown=www-data:www-data --from=frontend /app/public/css/ ./public/css/
 
-# Copy composer dependencies
+# Uncomment this line if you have "mix.version()" setup in your "webpack.mix.js" file.
+# COPY --chown=www-data:www-data --from=frontend /app/public/mix-manifest.json ./public/mix-manifest.json
+
+# Copy Composer dependencies
 COPY --chown=www-data:www-data --from=vendor /app/vendor/ ./vendor/
-
-# Copy application code.
 COPY --chown=www-data:www-data . .
 
-@if ($config->cacheRoutes())
-RUN php artisan route:cache
-@endif
+RUN php artisan config:cache
+
+# Uncomment the line below if you would like to enable route caching. This can greatly improve
+# performance but you need to make sure that your application does not use Closure routes.
+
+# RUN php artisan route:cache

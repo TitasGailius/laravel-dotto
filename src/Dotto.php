@@ -45,7 +45,7 @@ class Dotto
     {
         $dotto = new static(new Configuration($config));
 
-        return $dotto->copyFiles();
+        return $dotto->copyViews();
     }
 
     /**
@@ -53,25 +53,37 @@ class Dotto
      *
      * @return void
      */
-    public function copyFiles()
+    public function copyViews()
     {
-        foreach (static::$views as $view => $destination) {
-            $this->copyView($view, $destination);
+        foreach ($this->getViews() as $name => $view) {
+            $this->copyView($name, $view);
         }
     }
 
     /**
      * Copy a givne view.
      *
-     * @param  string $view
      * @param  string $destination
+     * @param  mixed  $view
      * @return void
      */
-    protected function copyView(string $view, string $destination)
+    protected function putView($name, $view)
     {
-        if ($this->canCopy($path = base_path($destination))) {
-            file_put_contents($path, view($view, ['config' => $this->config]));
+        if ($this->canCopy($path = base_path($name))) {
+            file_put_contents($path, $view);
         }
+    }
+
+    /**
+     * Get dotto views.
+     *
+     * @return array
+     */
+    public function getViews()
+    {
+        return collect(static::$views)->mapWithKeys(function ($name, $view) {
+            return [$name => view($view, ['config' => $this->config])];
+        })->all();
     }
 
     /**

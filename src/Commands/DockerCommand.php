@@ -11,7 +11,7 @@ use Symfony\Component\Console\Command\Command as SymfonyCommand;
 abstract class DockerCommand extends Command
 {
     /**
-     * Get executable command.
+     * Get the executable command.
      *
      * @return string
      */
@@ -24,8 +24,8 @@ abstract class DockerCommand extends Command
      */
     public function handle()
     {
-        Terminal::in(base_path(''))
-                ->output($this->output)
+        Terminal::output($this)
+                ->in(base_path())
                 ->run($this->getCommand());
     }
 }
