@@ -3,7 +3,6 @@
     "description": "Laravel Dotto is a very simple yet highly optimized docker setup for your Laravel application.",
     "keywords": ["laravel", "ui", "docker", "docker-compose"],
     "license": "MIT",
-    "version": "1.0.0",
     "authors": [
         {
             "name": "Titas Gailius",
