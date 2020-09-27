@@ -12,7 +12,10 @@ class DottoCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'dotto {--m|merge : Merge "docker-compose.yml" and "Dockerfile" files}';
+    protected $signature = 'dotto
+        {--m|merge : Merge "docker-compose.yml" and "Dockerfile" files}
+        {--e|enter : Enter the app container after all services are started}
+    ';
 
     /**
      * Execute the console command.
@@ -31,6 +34,10 @@ class DottoCommand extends Command
 
         if ($response->ok()) {
             $this->info('Dotto services started successfully.');
+        }
+
+        if ($this->option('enter')) {
+            $this->call('dotto:enter');
         }
     }
 }
