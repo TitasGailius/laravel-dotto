@@ -2,114 +2,71 @@
 
 namespace TitasGailius\Dotto;
 
-use InvalidArgumentException;
-use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
+use Illuminate\Container\Container;
+use TitasGailius\Dotto\Contracts\Configuration as ConfigurationContract;
 
-class Configuration
+class Configuration implements ConfigurationContract
 {
     /**
-     * Dotto configuration.
+     * Determine if the applicaiton depends on a redis service.
      *
-     * @var array
+     * @return boolean
      */
-    protected $config;
-
-    /**
-     * Instantiate a new configuration class.
-     *
-     * @param  array  $config
-     * @return void
-     */
-    public function __construct(array $config)
+    public function hasRedis(): bool
     {
-        $this->config = $config;
+        return in_array('redis', [
+            $this->getQueueDriver(),
+            $this->getCacheDriver(),
+        ]);
     }
 
     /**
-     * Get database name.
+     * Determine if the applicaiton depends on a musql service.
+     *
+     * @return boolean
+     */
+    public function hasMysql(): bool
+    {
+        return $this->getDatabaseDriver() === 'mysql';
+    }
+
+    /**
+     * Get the default queue driver.
      *
      * @return string
      */
-    public function database(): string
+    public function getQueueDriver(): string
     {
-        if (! isset($this->config['database']['connection'])) {
-            throw new InvalidArgumentException('Dotto database not specified.');
-        }
-
-        return $this->config['database']['connection'];
+        return Arr::get(
+            config('queue.connections'),
+            sprintf('%s.driver', config('queue.default'))
+        );
     }
 
     /**
-     * Determine if the files should be replaced by default.
-     *
-     * @return bool
-     */
-    public function force()
-    {
-        return $this->config['force'] ?? false;
-    }
-
-    /**
-     * Get allowed replacements.
-     *
-     * @return array
-     */
-    public function allowedReplacements(): array
-    {
-        return $this->config['replacements'] ?? [];
-    }
-
-    /**
-     * Determine if the file can be replaced.
-     *
-     * @param  string  $file
-     * @return bool
-     */
-    public function canReplaceFile(string $file): bool
-    {
-        return array_serch($destination, $this->allowedReplacements()) !== false;
-    }
-
-    /**
-     * Determine if the routes are cached.
-     *
-     * @return bool
-     */
-    public function cacheRoutes(): bool
-    {
-        return $this->config['cacheRoutes'] ?? false;
-    }
-
-    /**
-     * Get the node package manager.
+     * Get the default queue driver.
      *
      * @return string
      */
-    public function nodeManager(): string
+    public function getCacheDriver(): string
     {
-        return $this->config['manager'] ?? 'npm';
+        return Arr::get(
+            config('cache.stores'),
+            sprintf('%s.driver', config('cache.default'))
+        );
     }
 
     /**
-     * Return a lock file for the node package manager.
+     * Get the default database driver.
      *
      * @return string
      */
-    public function lockFile(): string
+    public function getDatabaseDriver(): string
     {
-        return [
-            'npm' => 'package-lock.json',
-            'yarn' => 'yarn.lock',
-        ][$this->nodeManager()];
-    }
-
-    /**
-     * Get asset directories.
-     *
-     * @return array
-     */
-    public function assets(): array
-    {
-        return $this->config['assets'] ?? [];
+        return Arr::get(
+            config('database.connections'),
+            sprintf('%s.driver', config('database.default'))
+        );
     }
 }

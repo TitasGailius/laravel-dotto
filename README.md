@@ -1,165 +1,147 @@
-#### Work In Progress
-
 # Laravel Dotto
 
-Laravel Dotto is a very simple yet highly optimized docker setup for your Laravel application.
+Dotto is a very simple yet highly optimized Laravel development environment setup powered by Docker.
 
 <p align="center">
     <img width="450" src="./images/dotto.png" alt="Dotto">
 </p>
 
-# Usage
-
-Everything is automated...
-
-```bash
-php artisan dotto:up
-```
-
-... and Dotto will launch your application.
-
-# How It Works?
-
-Dotto automatically discovers what services your application requires and nicely bundles docker-compose services for you.
-
-# Logs
-
-If you would like to tail your application logs, simply run:
-
-```bash
-php artisan dotto:logs
-```
-
-<!-- # Stack
-
-- Nginx
-- PHP 7.3
-- MySQL 8.0
-- Redis
-- Queues
-- Scheduler
-
-# Features
-
-- Build
-    - **Fast builds**- multi-stage docker setup is highly optimised for caching.
-    - **Simple**- Only 3 files are required to run the entire setup.
-    - Uses **PHP 7.3** to install your composer dependencies.
-    - Uses **Yarn** with **NodeJS 13** to build your frontend assets.
-- Local Development
-    - Queue workers always run the latest code (no need to manually restart anything).
-    - Laravel scheduler always runs the latest code.
-- Production
-    - Routes, views and configuration files are cached.
-    - Queues are setup for maximum performance.
-    - Uses PhpRedis pecl extension for maximum performance.
-
 # Installation
 
-Require Dotto as a composer dependency.
+Install Dotto with composer:
 
 ```bash
 composer require titasgailius/laravel-dotto --dev
 ```
 
-Publish docker files:
-
-```bash
-php artisan dotto:install
-```
-
-This command will publish 3 files for your docker setup: `Dockerfile`, `docker-compose.yml` and `nginx.conf`
-
 # Usage
 
-Start the application with docker-compose.
+Dotto automatically discovers, configures and starts the services required by your Laravel application.
 
 ```bash
-docker-compose up
+php artisan dotto
 ```
 
-# Configuration
+## Enter Container
 
-#### Development
-For the best development experience, set `APP_ENV=local` in your `.env` file when developing locally.
+You may interact with the application container on the command line:
 
-#### Laravel Mix: Versioning / Cache Busting
-
-If your application uses [Versioning / Cache Busting](https://laravel.com/docs/7.x/mix#versioning-and-cache-busting), you will need to
-uncomment the line below in your `Dockerfile` file:
-
-```Dockerfile
-...
-
-# Uncomment this line if you have "mix.version()" setup in your "webpack.mix.js" file.
-# COPY --chown=www-data:www-data --from=frontend /app/public/mix-manifest.json ./public/mix-manifest.json
-
-...
+```bash
+php artisan dotto:enter
 ```
 
-#### Frontend build
+## Laravel Tinker
 
-If you use apllication uses other than default `js`, `sass` asset directories, make sure that the correct files are copied during the build stage:
+You may interact with your entire Laravel application on the command line:
 
-```Dockerfile
-...
-
-RUN yarn install
-
-COPY resources/js ./resources/js
-COPY resources/sass ./resources/sass
-
-RUN yarn production
-
-...
+```bash
+php artisan dotto:tinker
 ```
 
-#### TailwindCSS users
+## Logs
 
-If you use TailwindCSS in your Laravel application, you will need to make sure that the `tailwind.config.js` file is copied to the image during a build stage:
+You may watch your application logs:
 
-```Dockerfile
-#
-# Build Frontend Assets
-#
-FROM node:8.11 as frontend
-
-WORKDIR /app
-
-COPY artisan package.json webpack.mix.js yarn.lock tailwind.config.js ./
-
-...
+```bash
+php artisan dotto:logs
 ```
-
-#### MySQL
-
-Database **name**, **username** and **password** is configured using environment variables from your `.env` file:
-- `DB_DATABASE`
-- `DB_USERNAME`
-- `DB_PASSWORD`
-
-You may also change the **root password**.
-- On the initiail run add: `DB_ROOT_PASSWORD=secret docker-compose up`
 
 ---
 
-:round_pushpin: **If you have already built the mysql image and want to change the credentials, the easiest option is to start over by destroying the mysql volume:**
+## Configuration
+
+You may customize the Dotto setup by publishing the `Dotto.yml` configuration file.
 
 ```bash
-# Stop the containers
-docker-compose down
-
-# List volumes to find the mysql volume
-docker volume ls
-
-## Destroy the appropriate mysql volume
-docker volume rm laravel_dotto_mysql
-
-# Set a new password in .env file
-DB_PASSWORD=secret
-
-# Start the containers back up
-docker-compose up
+php artisan dotto:publish
 ```
- -->
 
+### Database
+
+Dotto automatically detects your default database connection and starts the appropriate services.
+Of course, You may override what database connection(s) are used by your application.
+
+```yml
+databases:
+  - database-1
+  - database-2
+```
+
+:round_pushpin: By default, Dotto uses the database credentials defined in your `config/database.php` configuration file. <br>
+:round_pushpin: The `host` of a database is the same as connection name.
+
+### Cache
+
+You may override what cache backend(s) are used in your application.
+
+```yml
+caches:
+  - redis
+  - memcached
+```
+
+Currently supported cache backends: `redis`, `memchached`.
+
+### Queues
+
+You may override what queue backend(s) are used in your application.
+
+```yml
+queues:
+  - redis
+  - beanstalkd
+```
+
+Currently supported queue backends: `redis`, `beabstalkd`.
+
+### Extending
+
+You may instruct Dotto to merge the existing `docker-compose.yml` and `Dockerfile` files by running Dotto with the `--m` option (or `--merge`).
+
+```bash
+php artisan dotto --m
+```
+
+Additionally, you may call the `mergeDockerCompose` or `mergeDockerfile` methods in your `AppServiceProvider` to
+instruct Dotto to merge these files by default.
+
+```php
+<?php
+
+namespace App\Providers;
+
+use TitasGailius\Dotto\Facades\Dotto;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        Dotto::mergeDockerfile();
+        Dotto::mergeDockerCompose();
+    }
+  }
+```
+
+Then, you may simply use your regular `docker-compose.yml` and `Dockerfile` files to add any new services or install additional PHP dependencies.
+
+```yml
+# dotto-compose.yml
+version: '3'
+
+services:
+  your-service-name:
+    image: "hello-world"
+```
+
+```Dockerfile
+# Dockerfile
+RUN docker-php-ext-install pcntl
+
+...
+```
