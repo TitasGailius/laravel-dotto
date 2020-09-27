@@ -2,78 +2,71 @@
 
 namespace TitasGailius\Dotto;
 
-use InvalidArgumentException;
-use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
+use Illuminate\Container\Container;
+use TitasGailius\Dotto\Contracts\Configuration as ConfigurationContract;
 
-class Configuration
+class Configuration implements ConfigurationContract
 {
     /**
-     * Required configuration keys.
+     * Determine if the applicaiton depends on a redis service.
      *
-     * @var array
+     * @return boolean
      */
-    const KEYS = [
-        'databases',
-        'redis'
-        'cache_routes',
-        'php_version'
-        'php_dependencies',
-        'frontend'
-        'frontend_command',
-        'manager'
-        'resources',
-    ];
-
-    /**
-     * Dotto configuration.
-     *
-     * @var array
-     */
-    protected $config;
-
-    /**
-     * Instantiate a new configuration class.
-     *
-     * @param  array  $config
-     * @return void
-     */
-    public function __construct(array $config)
+    public function hasRedis(): bool
     {
-        $this->config = $config;
+        return in_array('redis', [
+            $this->getQueueDriver(),
+            $this->getCacheDriver(),
+        ]);
     }
 
     /**
-     * Get asset directories.
+     * Determine if the applicaiton depends on a musql service.
      *
-     * @return array
+     * @return boolean
      */
-    public function assets(): array
+    public function hasMysql(): bool
     {
-        return $this->config['frontend']['assets'];
+        return $this->getDatabaseDriver() === 'mysql';
     }
 
     /**
-     * Get database configuration.
-     *
-     * @return array
-     */
-    public function databases()
-    {
-        return array_map(function (array $connection) {
-            return $connection['driver'];
-        }, $this->config['databases']);
-    }
-
-    /**
-     * Get nodejs package manager lock file.
+     * Get the default queue driver.
      *
      * @return string
      */
-    public function getLockFile(): string
+    public function getQueueDriver(): string
     {
-        return [
-            'npm' => 'package-lock.json',
-            'yarn' => 'yarn.lock',
-        ][$this->config['frontend']['manager']];
+        return Arr::get(
+            config('queue.connections'),
+            sprintf('%s.driver', config('queue.default'))
+        );
+    }
+
+    /**
+     * Get the default queue driver.
+     *
+     * @return string
+     */
+    public function getCacheDriver(): string
+    {
+        return Arr::get(
+            config('cache.stores'),
+            sprintf('%s.driver', config('cache.default'))
+        );
+    }
+
+    /**
+     * Get the default database driver.
+     *
+     * @return string
+     */
+    public function getDatabaseDriver(): string
+    {
+        return Arr::get(
+            config('database.connections'),
+            sprintf('%s.driver', config('database.default'))
+        );
     }
 }

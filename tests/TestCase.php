@@ -2,9 +2,10 @@
 
 namespace TitasGailius\Dotto\Tests;
 
-use Orchestra\Testbench\TestCase;
+use Orchestra\Testbench\TestCase as BaseTestCase;
+use TitasGailius\Dotto\DottoServiceProvider;
 
-abstract class TestCase extends TestCase
+abstract class TestCase extends BaseTestCase
 {
     /**
      * Get application service providers.
@@ -14,6 +15,6 @@ abstract class TestCase extends TestCase
      */
     protected function getPackageProviders($app)
     {
-        return ['TitasGailius\Dotto\DottoServiceProvider'];
+        return [DottoServiceProvider::class];
     }
 }

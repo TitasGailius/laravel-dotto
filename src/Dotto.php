@@ -3,20 +3,13 @@
 namespace TitasGailius\Dotto;
 
 use Illuminate\Console\Command;
+use TitasGailius\Terminal\Terminal;
+use Illuminate\Contracts\Container\Container;
+use TitasGailius\Terminal\Contracts\Response;
+use TitasGailius\Dotto\Contracts\Configuration;
 
 class Dotto
 {
-    /**
-     * Map stub views to destination files.
-     *
-     * @var array
-     */
-    public static $views = [
-        'dotto::nginx-conf' => 'nginx.conf',
-        'dotto::Dockerfile' => 'Dockerfile',
-        'dotto::docker-compose-yml' => 'docker-compose.yml',
-    ];
-
     /**
      * Dotto configuration.
      *
@@ -25,77 +18,104 @@ class Dotto
     protected $config;
 
     /**
+     * Container instance.
+     *
+     * @var \Illuminate\Contracts\Container\Container
+     */
+    protected $container;
+
+    /**
+     * Determine if the "Dockerfile" file should be merged.
+     *
+     * @var bool
+     */
+    public $mergeDockerfile = false;
+
+    /**
+     * Determine if the "docker-compose.yml" file should be merged.
+     *
+     * @var bool
+     */
+    public $mergeDockerCompose = false;
+
+    /**
      * Instantiate a new dotto class.
      *
      * @param  \TitasGailius\Dotto\Configuration  $config
+     * @param \Illuminate\Contracts\Container\Container  $container
      * @return void
      */
-    public function __construct(Configuration $config)
+    public function __construct(Configuration $config, Container $container)
     {
         $this->config = $config;
+        $this->container = $container;
     }
 
     /**
-     * Install Dotto from a given configuration array.
+     * Start the dotto services.
      *
-     * @param  array  $config
-     * @return void
+     * @param  \Illuminate\Console\Command  $command
+     * @return \TitasGailius\Terminal\Contracts\Response
      */
-    public static function install(array $config)
+    public function start(Command $command): Response
     {
-        $dotto = new static(new Configuration($config));
-
-        return $dotto->copyViews();
-    }
-
-    /**
-     * Install Dotto.
-     *
-     * @return void
-     */
-    public function copyViews()
-    {
-        foreach ($this->getViews() as $name => $view) {
-            $this->copyView($name, $view);
+        foreach ([
+            Actions\EnsureDottoDirectoryExists::class,
+            Actions\GenerateDockerCompose::class,
+            Actions\GenerateDockerfile::class,
+            Actions\GenerateNginxConfig::class,
+        ] as $action) {
+            $this->container->call($action, [], 'handle');
         }
+
+        return Terminal::output($command)->run($this->startCommand());
     }
 
     /**
-     * Copy a givne view.
+     * Get the "docker-compose up" command.
      *
-     * @param  string $destination
-     * @param  mixed  $view
-     * @return void
+     * @return string
      */
-    protected function putView($name, $view)
+    protected function startCommand(): string
     {
-        if ($this->canCopy($path = base_path($name))) {
-            file_put_contents($path, $view);
+        $command = 'docker-compose -f .dotto/docker-compose.yml up -d';
+
+        if ($path = $this->mergableDockerCompose()) {
+            return "{$command} -f ${path}";
         }
+
+        return $command;
     }
 
     /**
-     * Get dotto views.
+     * Return the path to the mergable "docker-compose.yml" file.
      *
-     * @return array
+     * @return string|null
      */
-    public function getViews()
+    public function mergableDockerCompose(): ?string
     {
-        return collect(static::$views)->mapWithKeys(function ($name, $view) {
-            return [$name => view($view, ['config' => $this->config])];
-        })->all();
+        $path = base_path('docker-compose.yml');
+
+        if ($this->mergeDockerCompose && file_exists($path)) {
+            return $path;
+        }
+
+        return null;
     }
 
     /**
-     * Determine if the file can be copied.
+     * Return the path to the mergable "Dockerfile" file.
      *
-     * @param  string  $file
-     * @return boolean
+     * @return string|null
      */
-    protected function canCopy(string $file)
+    public function mergableDockerfile(): ?string
     {
-        return ! file_exists(base_path($file))
-            || $this->config->force()
-            || $this->config->canReplaceFile($file);
+        $path = base_path('Dockerfile');
+
+        if ($this->mergeDockerfile && file_exists($path)) {
+            return $path;
+        }
+
+        return null;
     }
 }

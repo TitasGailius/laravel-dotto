@@ -1,8 +1,6 @@
-#### Work In Progress
-
 # Laravel Dotto
 
-Dotto is a very simple yet highly optimized Laravel development environment powered by Docker.
+Dotto is a very simple yet highly optimized Laravel development environment setup powered by Docker.
 
 <p align="center">
     <img width="450" src="./images/dotto.png" alt="Dotto">
@@ -18,14 +16,13 @@ composer require titasgailius/laravel-dotto --dev
 
 # Usage
 
-Dotto automatically discovers, configures and starts the services required for your Laravel application.
-
+Dotto automatically discovers, configures and starts the services required by your Laravel application.
 
 ```bash
 php artisan dotto
 ```
 
-# Enter Container
+## Enter Container
 
 You may interact with the application container on the command line:
 
@@ -33,7 +30,7 @@ You may interact with the application container on the command line:
 php artisan dotto:enter
 ```
 
-# Laravel Tinker
+## Laravel Tinker
 
 You may interact with your entire Laravel application on the command line:
 
@@ -41,7 +38,7 @@ You may interact with your entire Laravel application on the command line:
 php artisan dotto:tinker
 ```
 
-# Logs
+## Logs
 
 You may watch your application logs:
 
@@ -51,10 +48,9 @@ php artisan dotto:logs
 
 ---
 
-# Configuration
+## Configuration
 
-You may customize Dotto setup by publishing the `Dotto.yml` configuration file.
-
+You may customize the Dotto setup by publishing the `Dotto.yml` configuration file.
 
 ```bash
 php artisan dotto:publish
@@ -62,16 +58,17 @@ php artisan dotto:publish
 
 ### Database
 
-You may override what database(s) are used by your application.
+Dotto automatically detects your default database connection and starts the appropriate services.
+Of course, You may override what database connection(s) are used by your application.
 
 ```yml
 databases:
-    - database-1
-    - database-2
+  - database-1
+  - database-2
 ```
 
-:round_pushpin: Each value is a database connection name, defined in your `config/database.php` file. <br>
-:round_pushpin: By default, the `host` of a database is the same as connection name.
+:round_pushpin: By default, Dotto uses the database credentials defined in your `config/database.php` configuration file. <br>
+:round_pushpin: The `host` of a database is the same as connection name.
 
 ### Cache
 
@@ -79,8 +76,8 @@ You may override what cache backend(s) are used in your application.
 
 ```yml
 caches:
-    - redis
-    - memcached
+  - redis
+  - memcached
 ```
 
 Currently supported cache backends: `redis`, `memchached`.
@@ -91,32 +88,60 @@ You may override what queue backend(s) are used in your application.
 
 ```yml
 queues:
-    - redis
-    - beanstalkd
+  - redis
+  - beanstalkd
 ```
 
 Currently supported queue backends: `redis`, `beabstalkd`.
 
 ### Extending
 
-You may extend the `docker-compose.yml` & `Dockerfile` files.
+You may instruct Dotto to merge the existing `docker-compose.yml` and `Dockerfile` files by running Dotto with the `--m` option (or `--merge`).
 
-```yml
-extend:
-    docker-compose: docker-compose.yml
-    dockerfile: Dockerfile
+```bash
+php artisan dotto --m
 ```
 
-Then, you may add any new services or install additional dependencies for your application:
+Additionally, you may call the `mergeDockerCompose` or `mergeDockerfile` methods in your `AppServiceProvider` to
+instruct Dotto to merge these files by default.
+
+```php
+<?php
+
+namespace App\Providers;
+
+use TitasGailius\Dotto\Facades\Dotto;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        Dotto::mergeDockerfile();
+        Dotto::mergeDockerCompose();
+    }
+  }
+```
+
+Then, you may simply use your regular `docker-compose.yml` and `Dockerfile` files to add any new services or install additional PHP dependencies.
+
+```yml
+# dotto-compose.yml
+version: '3'
+
+services:
+  your-service-name:
+    image: "hello-world"
+```
 
 ```Dockerfile
 # Dockerfile
 RUN docker-php-ext-install pcntl
-```
 
-```yml
-# docker-compose.yml
-services:
-    redis:
-        image: "redis:alpine"
+...
 ```

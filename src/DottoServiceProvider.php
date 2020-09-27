@@ -3,9 +3,20 @@
 namespace TitasGailius\Dotto;
 
 use Illuminate\Support\ServiceProvider;
+use TitasGailius\Dotto\Contracts\Configuration as ConfigurationContract;
 
 class DottoServiceProvider extends ServiceProvider
 {
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this->app->bind(ConfigurationContract::class, Configuration::class);
+    }
+
     /**
      * Register the package services.
      *
@@ -15,12 +26,14 @@ class DottoServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                Commands\UpCommand::class,
-                Commands\DownCommand::class,
-                Commands\InstallCommand::class,
+                Console\Commands\DottoCommand::class,
+                Console\Commands\DottoStopCommand::class,
+                Console\Commands\DottoEnterCommand::class,
+                Console\Commands\DottoLogsCommand::class,
+                Console\Commands\DottoTinkerCommand::class,
             ]);
 
-            $this->loadViewsFrom(__DIR__.'/dotto-stubs', 'dotto');
+            $this->loadViewsFrom(__DIR__.'/views', 'dotto');
         }
     }
 }

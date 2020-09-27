@@ -5,43 +5,44 @@ services:
     build: ./
     restart: always
     volumes:
-      - ./:/app
+      - .././:/app
     depends_on:
-      - mysql
-      - redis
+      - database
+      {{ $redis ? '- redis' : '' }}
 
   queue:
     build: ./
-    command: 'if [$APP_ENV == "local"]; then php artisan queue:listen; else php artisan queue:work; fi'
+    command: 'php artisan queue:listen'
     restart: always
     volumes:
-      - ./:/app
+      - .././:/app
     depends_on:
-      - mysql
-      - redis
+      - database
+      {{ $redis ? '- redis' : '' }}
 
   scheduler:
     build: ./
     command: 'while true; do php artisan schedule:run; sleep 60; done'
     restart: always
     volumes:
-      - ./:/app
+      - .././:/app
     depends_on:
-      - mysql
-      - redis
+      - database
+      {{ $redis ? '- redis' : '' }}
 
   nginx:
     image: nginx
     restart: always
     volumes:
-      - ./:/app
+      - .././:/app
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - app
     ports:
       - "80:80"
 
-  mysql:
+@if ($mysql)
+  database:
     image: mysql:8
     restart: always
     environment:
@@ -54,11 +55,14 @@ services:
       - "--default-authentication-plugin=mysql_native_password"
     volumes:
      - dotto_mysql:/var/lib/mysql
+@endif
 
+@if ($redis)
   redis:
     image: redis
     volumes:
      - dotto_redis:/data
+@endif
 
 volumes:
   dotto_mysql:
